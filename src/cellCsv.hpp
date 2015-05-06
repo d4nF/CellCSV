@@ -140,7 +140,7 @@ namespace ccsv
 	    if (!cIt == csvData_.end()) // if false, then key not found!
 	    {
 		return cIt->second.str;
-	    }sdfsdfsd
+	    }
 	    return "";
 	}
 	void dump(std::string)
