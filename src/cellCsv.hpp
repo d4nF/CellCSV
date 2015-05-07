@@ -1,3 +1,37 @@
+/*
+Copyright (c) 2015, Daniel Fialkovsky
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of CellCSV nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
+#ifndef _ccsv_cellCSV_HPP_
+#define _ccsv_cellCSV_HPP_ 1
+
 #include <unordered_map>
 #include <vector>
 #include <deque>
@@ -6,13 +40,7 @@
 #include <string>
 #include <fstream>
 #include "timsort.hpp" // timsort has 
-/*
- * 
- * 0,0 1,0 2,0		1,2,3
- * 0,1 1,1 1,2		
- * 0,2 1,2 2,2
- * 
- */
+
 
 namespace ccsv 
 {
@@ -22,9 +50,7 @@ namespace ccsv
     enum class dattype : int
     {
 	INT,
-	UINT,
 	DOUBLE,
-	FLOAT,
 	STRING
     };
     struct key
@@ -86,9 +112,9 @@ namespace ccsv
      * 
      * It should be noted that this convience comes with a penalty of 
      * 	a) Using a hash table implementation, so this library is not completely memory efficient
-     *  b) Using a vector to store keys so that the bounds (for wri)
+     *  b) Using a vector to store keys so that the bounds can be kept track of
      * 
-     * currently cellCsv doesn't natively handle rectangular producing rectangular csv files, however 
+     * currently cellCsv doesn't natively handle rectangular producing rectangular csv files, however this may be supported in the future
      */
     class cellCsv 
     {
@@ -104,7 +130,12 @@ namespace ccsv
 	{
 	    return lhs.x+(COLUMN_LIMIT*lhs.y) < rhs.x+(COLUMN_LIMIT*rhs.y);
 	}
-    public:
+    public: 
+	/*! inserts a string type into the specified cell
+	 * @param x the x coordnate of the cell (starting from 0)
+	 * @param y the y coordinate of the cell(starting from 0)
+	 * @param str the string to be inserted
+	 */
 	void setCell(numType x, numType y, std::string str)
 	{
 	    if (str.empty()){
@@ -114,7 +145,7 @@ namespace ccsv
 	    value val(str, dattype::STRING);
 	    insertToCell(k ,val);
 	}
-	void setCell(numType x, numType y, double dnum)
+	void setCellReal(numType x, numType y, double dnum)
 	{
 	    key k(x,y);
 	    value val(std::to_string(dnum), dattype::DOUBLE);
@@ -122,27 +153,20 @@ namespace ccsv
 
 	}
 	
-	void setCell(numType x, numType y, float fnum)
-	{
-	    key k(x,y);
-	    value val(std::to_string(fnum), dattype::FLOAT);
-	    insertToCell(k ,val);
-	}
-	
-	void setCell(numType x, numType y, long long int num)
+	void setCellInt(numType x, numType y, long long int num)
 	{
 	    key k(x,y);
 	    value val(std::to_string(num), dattype::INT);
 	    insertToCell(k ,val);
 	}
 	
-	void setCell(numType x, numType y, unsigned long long int num)
-	{
-	    key k(x,y);
-	    value val(std::to_string(num), dattype::UINT);
-	    insertToCell(k ,val);
-
-	}	
+	/*! returns a copy of ccsv::value the coordinates given (access string data with retval.str)
+	 * If for whatever reason you needed to keep track of the datatype, it can be retrieved with retval.dtype
+	 * @param x the x coordnate of the cell (starting from 0)
+	 * @param y the y coordinate of the cell(starting from 0)
+	 * @return the datavalue that was stored in the cell 
+	 * 
+	*/
 	value getVal(numType x, numType y)
 	{
 	    auto It = csvData_.find(key(x,y));
@@ -153,9 +177,13 @@ namespace ccsv
 	    return value(EMPTY_STRING, dattype::STRING);
 	}
 	
-	/*!
+	/*! returns a copy of the string the contents at the coordinates given
+	 * If for whatever reason you needed to keep track of the datatype, it can be retrieved with retval.dtype
+	 * @param x the x coordnate of the cell (starting from 0)
+	 * @param y the y coordinate of the cell(starting from 0)
+	 * @return the datavalue that was stored in the cell 
 	 * 
-	 */
+	*/
 	std::string at(numType x, numType y)
 	{
 	    const auto cIt = csvData_.find(key(x,y));
@@ -165,7 +193,13 @@ namespace ccsv
 	    }
 	    return EMPTY_STRING;
 	}
-	
+	/*! returns a reference of the string the contents at the coordinates given
+	 * If for whatever reason you needed to keep track of the datatype, it can be retrieved with retval.dtype
+	 * @param x the x coordnate of the cell (starting from 0)
+	 * @param y the y coordinate of the cell(starting from 0)
+	 * @return the datavalue that was stored in the cell 
+	 * 
+	*/
 	const std::string & atCRef(numType x, numType y)
 	{
 	    const auto cIt = csvData_.find(key(x,y));
@@ -175,7 +209,11 @@ namespace ccsv
 	    }
 	    return EMPTY_STRING;
 	}
-	
+	/*! writes the csv file
+	 * @param file the destination file/path for the csv file (know that you have to make the .csv extention on your own)
+	 * @param delimiters optional parameter to add your own delimiters (if not using comma seperation)
+	 * 
+	*/
 	void dump(std::string file, std::string delimiters = ",")
 	{
 	    std::ofstream writeFile;
@@ -215,19 +253,36 @@ namespace ccsv
 	   }
 	    
 	}
+	/*! removes all the items from every cell. It however isn't garantueed to clear the memory consumed (yet)
+	 */
 	void reset()
 	{
 	   csvData_.clear();
 	   boundVec_.clear();
 	}
+	/*! @warning this hasn't been implemented yet
+	 * removes the element from the key supplied
+	 * @param x the x coordnate of the cell (starting from 0)
+	 * @param y the y coordinate of the cell(starting from 0)
+	 */
+	void remove(numType x, numType y)
+	{
+	    // to be implemented
+	}
 	
     private:
+	/*! adds a reference copy (in the future this will be a pointer or reference) to a boundVec_ to easily access data stored in the csvData_ hashtable
+	 * @param k the key that corresponds to what should have been recently inserted into the hashtable 
+	 */
 	void addToBoundVec(const key & k)
 	{
 	    boundVec_.push_back(k);
 // 	    gfx::TimSort<key,keyCompare>(boundVec_.begin(),boundVec_.end(), compareKeys); // I cant figure out how to use this QQ
 	    std::stable_sort(boundVec_.begin(),boundVec_.end(), compareKeys);
 	}
+	/*! removes a reference copy (in the future this will be a pointer or reference) to a boundVec_ to easily access data stored in the csvData_ hashtable
+	 * @param k the key that corresponds to what should have been recently removed from the hashtable 
+	 */
 	void removeFromBoundVec(const key & k)
 	{
 	   // presorted, since we sorted at add
@@ -235,8 +290,7 @@ namespace ccsv
 	   boundVec_.erase(it);
 	}
 	
-	/*! This is a mere procedure to shorten code for the cell() methods
-	 * 
+	/*! This is a mere procedure to shorten code for the setCell() methods
 	 */
 	inline void insertToCell(const key & k ,const value & val)
 	{
@@ -260,3 +314,5 @@ namespace ccsv
 	std::vector<key>		boundVec_; 
     };
 }
+
+#endif //fileguard
