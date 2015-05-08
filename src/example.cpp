@@ -14,4 +14,5 @@ int main()
     csvWriter.setCell(7,2, "Here\'s an int type:");
     csvWriter.setCell(2,5, std::string("I AM A BANNANNA"));
     csvWriter.dump("testcsv.csv");
+    return 0;
 }
