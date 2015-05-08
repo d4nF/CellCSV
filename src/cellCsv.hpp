@@ -50,7 +50,7 @@ namespace ccsv
     enum class dattype : int
     {
 	INT,
-	DOUBLE,
+	REAL,
 	STRING
     };
     struct key
@@ -99,22 +99,22 @@ namespace ccsv
     
     /*!
      * This is a class/library csv reader/writer.
-     * unlike many other csv writers, cellCsv is capable of 
+     * Unlike many other csv writers, cellCsv is capable of 
      * adding contents to any "cell" in one go regardless if your data 
      * is being processed in different loops/times
-     * @example
-     * you can call
-     * csvHandle handler;
-     * handler.setCell(3,5,"im bob");
-     * handler.setCell(6,6,6.7345);
-     * handler.setCell(0,3,3);
-     * handler.dump("testcsv.csv");
+     * @example usage you can call
+     * 		csvHandle handler;
+     * 		handler.setCell(3,5,"im bob");
+     * 		handler.setCell(6,6,6.7345);
+     * 		handler.setCell(0,3,3);
+     * 		handler.dump("testcsv.csv");
      * 
      * It should be noted that this convience comes with a penalty of 
      * 	a) Using a hash table implementation, so this library is not completely memory efficient
      *  b) Using a vector to store keys so that the bounds can be kept track of
      * 
-     * currently cellCsv doesn't natively handle rectangular producing rectangular csv files, however this may be supported in the future
+     * currently cellCsv doesn't natively handle producing fully rectangular csv files if the entries are not complete
+     * 		 however this may be supported in the future
      */
     class cellCsv 
     {
@@ -148,7 +148,7 @@ namespace ccsv
 	void setCellReal(numType x, numType y, double dnum)
 	{
 	    key k(x,y);
-	    value val(std::to_string(dnum), dattype::DOUBLE);
+	    value val(std::to_string(dnum), dattype::REAL);
 	    insertToCell(k ,val);
 
 	}
@@ -253,7 +253,7 @@ namespace ccsv
 	   }
 	    
 	}
-	/*! removes all the items from every cell. It however isn't garantueed to clear the memory consumed (yet)
+	/*! Removes all the items from every cell. It however isn't garantueed to clear the memory that consumed (as of this implementation)
 	 */
 	void reset()
 	{
@@ -277,8 +277,8 @@ namespace ccsv
 	void addToBoundVec(const key & k)
 	{
 	    boundVec_.push_back(k);
-// 	    gfx::TimSort<key,keyCompare>(boundVec_.begin(),boundVec_.end(), compareKeys); // I cant figure out how to use this QQ
-	    std::stable_sort(boundVec_.begin(),boundVec_.end(), compareKeys);
+// 	    gfx::TimSort<key,keyCompare>(boundVec_.begin(),boundVec_.end(), compareKeys); // I cant figure out how to use this but I want to use it since boundVec_ is mostly sorted every time
+	    std::sort(boundVec_.begin(),boundVec_.end(), compareKeys);
 	}
 	/*! removes a reference copy (in the future this will be a pointer or reference) to a boundVec_ to easily access data stored in the csvData_ hashtable
 	 * @param k the key that corresponds to what should have been recently removed from the hashtable 
